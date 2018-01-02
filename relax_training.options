@@ -1,0 +1,9 @@
+-in:file:fullatom
+-out:file:fullatom
+-database /path_to_rosetta/Rosetta/main/database
+-out:pdb_gz
+-ex1
+-use_input_sc
+-nstruct 10
+-out:path:pdb models/
+-scorefile relax_training.fasc

@@ -1,0 +1,30 @@
+<ROSETTASCRIPTS>
+	<SCOREFXNS>
+		<ScoreFunction name="talaris_rwt" weights="talaris2013_cst.wts" />
+	</SCOREFXNS>
+	<FILTERS>
+	</FILTERS>
+	<TASKOPERATIONS>
+		<InitializeFromCommandline name="ifcl"/>
+		<RestrictToInterfaceVector name="rtiv" chain1_num="1,2" chain2_num="3" CB_dist_cutoff="10.0" nearby_atom_cutoff="5.5" vector_angle_cutoff="75" vector_dist_cutoff="9.0" />
+		<RestrictToRepacking name="rtr"/>
+		<ReadResfile name="vir" filename="virus_resfiles/%%virres%%.resfile" />
+	</TASKOPERATIONS>
+	<MOVERS>
+		<PackRotamersMover name="virmutate" task_operations="ifcl,vir" scorefxn="talaris2013" />
+		<FastRelax name="relax" task_operations="ifcl,rtr" scorefxn="talaris_rwt" />
+		<ddG name="ddg" per_residue_ddg="0" repack_unbound="1" chain_num="3" task_operations="rtiv,ifcl,rtr" scorefxn="talaris2013" />
+		<AntibodyInterfaceMover name="iface" pack_separated="1" fixedchains="G" scorefxn="talaris2013" />
+		<AtomCoordinateCstMover name="cst" />
+		<VirtualRoot name="root" removable="1" />
+		<VirtualRoot name="rmroot" remove="1" />
+		<AntibodyPredictor name="predict" fixedchains="G" output_to_scorefile="1" output_features="1" model_path="logreg.model" pack_separated="1" pack_input="0" />
+	</MOVERS>
+	<PROTOCOLS>
+		<Add mover_name="virmutate" />
+		<Add mover_name="root" />
+		<Add mover_name="relax" />
+		<Add mover_name="rmroot"/>
+	</PROTOCOLS>
+	<OUTPUT scorefxn="talaris2013" />
+</ROSETTASCRIPTS>

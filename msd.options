@@ -1,0 +1,13 @@
+-in:file:fullatom
+-out:file:fullatom
+-database /path_to_rosetta/Rosetta/main/database/
+-out:pdb_gz
+-use_input_sc
+-ex1
+-run:msd_job_dist
+-nstruct 10
+-mute protocols.simple_moves.GenericMonteCarloMover
+-out:suffix _msd_rlx
+-out:path:pdb msd_models
+-scorefile msd.fasc
+-l msd_templates.list
