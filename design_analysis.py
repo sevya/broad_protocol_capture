@@ -5,7 +5,7 @@ from optparse import OptionParser
 from Bio.PDB import PDBParser
 import subprocess, gzip
 import multiprocessing as mp
-from utils import Utils
+from sevy_utils import Utils
 
 if __name__ == '__main__':
 	usage = "%prog [options] <pdb_files>"
@@ -17,7 +17,8 @@ if __name__ == '__main__':
 	parser.add_option('--res', '--resfile', dest='resfile',help='Resfile',default='')
 	parser.add_option('--multiproc', '-m', dest='multiproc',help='Should I run this job on multiple processors?',default=False, action='store_true')
 	parser.add_option('--debug',dest='debug',help='Should I print additional information', default=False, action='store_true')
-
+	parser.add_option('--units',dest='units',help='What units for the weblogo? bits or probability, default bits',default='bits')
+	parser.add_option('--weblogo-path',dest='weblogo_path',help='Path to the weblogo executable',default='weblogo')
 	(options,args)= parser.parse_args()
 	## Step 1: parse resfile to see which chains and residues I am designing
 	if options.resfile == '':
@@ -53,7 +54,9 @@ if __name__ == '__main__':
 
 	## Step 4: make .tab frequency file
 	position_dict = {}
-	aa_list = sorted( Utils.amino_acids.values() )
+	## Changed by AMS 9.28.16 - need to get unique values from Utils.amino_acids
+	## When I added sulfated tyrosine as Y this made Y a duplicate entry
+	aa_list = sorted( list(set(Utils.amino_acids.values())) )
 	for resno, chain in designable_residues:
 		key = ','.join([chain, str(resno)])
 		position_dict[ key ] = {aa : 0 for aa in aa_list}
@@ -81,7 +84,7 @@ if __name__ == '__main__':
 			out.write( '\t'.join( [key] + [str(position_dict[key][aa]) for aa in aa_list] ) + '\n' )
 
 	## Step 5: make sequence logo from my fasta
-	weblogo_path = '/dors/meilerlab/apps/Linux2/x86_64/weblogo/3.3/weblogo'
+	weblogo_path = options.weblogo_path
 	annotation = []
 	if options.native == '':
 		annotation = [chain+str(resno) for resno, chain in designable_residues ]
@@ -90,12 +93,17 @@ if __name__ == '__main__':
 			resno, chain = des
 			annotation.append( chain+str(resno)+':'+currentAA )
 
-	weblogo_command = [weblogo_path, '-f', options.prefix+'.fasta', '-o', options.prefix+'_seq_log.'+options.format, '-F', options.format, '-A', 'protein', '-U', 'bits', '-i', '1', '-s', 'large', '-t', options.title, '--annotate', ','.join(annotation), '-S', '4.32', '--errorbars', 'NO', '-c', 'chemistry', '--fineprint', 'sevy_analysis', '--scale-width', 'Yes', '--composition', 'equiprobable', '-n', '40', '-W', '30', '-y', 'bits']
+	if options.units == 'bits':
+		weblogo_command = [weblogo_path, '-f', options.prefix+'.fasta', '-o', options.prefix+'_seq_log.'+options.format, '-F', options.format, '-A', 'protein', '-U', 'bits', '-i', '1', '-s', 'large', '-t', options.title, '--annotate', ','.join(annotation), '-S', '4.32', '--errorbars', 'NO', '-c', 'chemistry', '--fineprint', 'sevy_analysis', '--scale-width', 'Yes', '--composition', 'equiprobable', '-n', '40', '-W', '30', '-y', 'bits']
+
+	elif options.units == 'probability':
+		weblogo_command = [weblogo_path, '-f', options.prefix+'.fasta', '-o', options.prefix+'_seq_log.'+options.format, '-F', options.format, '-A', 'protein', '-U', 'probability', '-i', '1', '-s', 'large', '-t', options.title, '--annotate', ','.join(annotation), '-S', '1.0', '--errorbars', 'NO', '-c', 'chemistry', '--fineprint', 'sevy_analysis', '--scale-width', 'Yes', '--composition', 'equiprobable', '-n', '40', '-W', '30', '-y', 'Frequency']
 
 	if options.debug:
 		print ' '.join( weblogo_command )
 
 	output = subprocess.check_output(weblogo_command)
+	# print output
 
 
 
